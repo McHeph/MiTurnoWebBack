@@ -1,15 +1,15 @@
-const Horary = require("../models/Horary.models");
+const TimeFrame = require("../models/TimeFrame.models");
 const Turn = require("../models/Turn.models");
 const BranchOffice = require("../models/BranchOffice.models");
 const { Op } = require("sequelize");
 
-class HoraryController {
-  static getHorariesByDateAndHoraryBranchOffice(req, res) {
+class TimeFrameController {
+  static getAvailabilityByDateAndTimeFrameBranchOffice(req, res) {
     Turn.findAll({
       where: {
         branch_office_id: req.params.branch_office_id,
-        turn_date: req.params.date,
-        confirmation_id: "pending",
+        appointment_date: req.params.date,
+        confirmation: "pending",
       },
     })
       .then((turns) => {
@@ -20,7 +20,7 @@ class HoraryController {
                 return res.status(404).send("Branch Office not available");
               }
 
-              return Horary.findAll({
+              return TimeFrame.findAll({
                 where: {
                   id: {
                     [Op.between]: [
@@ -29,64 +29,65 @@ class HoraryController {
                     ],
                   },
                 },
-              }).then((horaries) => {
-                return res.status(200).send(horaries);
+              }).then((timeFrames) => {
+                return res.status(200).send(timeFrames);
               });
             }
           );
         }
 
-        const turnsGroupedByHoraryId = turns.reduce((grouped, turn) => {
-          const horary_id = turn.horary_id;
+        const turnsGroupedByAppointmentTime = turns.reduce((grouped, turn) => {
+          const appointment_time = turn.appointment_time;
 
-          if (!grouped[horary_id]) {
-            grouped[horary_id] = [];
+          if (!grouped[appointment_time]) {
+            grouped[appointment_time] = [];
           }
 
-          grouped[horary_id].push(turn);
+          grouped[appointment_time].push(turn);
           return grouped;
         }, {});
 
         return BranchOffice.findByPk(req.params.branch_office_id).then(
           (branch_office) => {
-            const unavailableHoraries = Object.keys(
-              turnsGroupedByHoraryId
+            const unavailableTimeFrames = Object.keys(
+              turnsGroupedByAppointmentTime
             ).filter(
-              (horary_id) =>
-                turnsGroupedByHoraryId[horary_id].length >= branch_office.boxes
+              (appointment_time) =>
+                turnsGroupedByAppointmentTime[appointment_time].length >=
+                branch_office.boxes
             );
 
-            return Horary.findAll({
+            return TimeFrame.findAll({
               where: {
                 id: {
                   [Op.between]: [
                     branch_office.opening_time,
                     branch_office.closing_time,
                   ],
-                  [Op.notIn]: unavailableHoraries,
+                  [Op.notIn]: unavailableTimeFrames,
                 },
               },
-            }).then((horaries) => {
-              return res.status(200).send(horaries);
+            }).then((timeFrames) => {
+              return res.status(200).send(timeFrames);
             });
           }
         );
       })
       .catch((error) => {
-        console.error("Error when trying to get horaries:", error);
+        console.error("Error when trying to get time frames:", error);
         return res.status(500).send("Internal Server Error");
       });
   }
-  static allHoraries(req, res) {
-    Horary.findAll({ attributes: ["id"] })
-      .then((horaries) => {
-        if (!horaries) return res.sendStatus(404);
-        res.status(200).send(horaries);
+  static allTimeFrames(req, res) {
+    TimeFrame.findAll({ attributes: ["id"] })
+      .then((timeFrames) => {
+        if (!timeFrames) return res.sendStatus(404);
+        res.status(200).send(timeFrames);
       })
       .catch((error) => {
-        console.error("Error getting horaries:", error);
+        console.error("Error getting time frames:", error);
         return res.status(500).send("Internal Server Error");
       });
   }
 }
-module.exports = HoraryController;
+module.exports = TimeFrameController;

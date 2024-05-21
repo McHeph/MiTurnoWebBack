@@ -1,9 +1,9 @@
 const Sequelize = require("sequelize");
 const db = require("./db");
 
-class Horary extends Sequelize.Model {}
+class TimeFrame extends Sequelize.Model {}
 
-Horary.init(
+TimeFrame.init(
   {
     id: {
       type: Sequelize.TIME,
@@ -11,34 +11,34 @@ Horary.init(
       unique: true,
     },
   },
-  { sequelize: db, modelName: "horary" }
+  { sequelize: db, modelName: "time_frame" }
 );
 
 /* Crea los horarios por defecto al instanciar la tabla.*/
-Horary.sync()
+TimeFrame.sync()
   .then(() => {
-    return Horary.count();
+    return TimeFrame.count();
   })
   .then((count) => {
-    const horariesToCreate = [];
+    const timesToCreate = [];
     if (count === 0) {
       for (let i = 7; i <= 21; i++) {
         for (let j = 0; j <= 45; j += 15) {
           if (!(i === 7 && (j === 0 || j === 15)) && !(i === 21 && j === 45))
-            horariesToCreate.push({
+            timesToCreate.push({
               id: `${i < 10 ? `0${i}` : i}:${j === 0 ? `00` : j}:00`,
             });
         }
       }
-      return Horary.bulkCreate(horariesToCreate);
+      return TimeFrame.bulkCreate(timesToCreate);
     }
-    return Promise.resolve(); // No es necesario devolver nada si ya hay horaries
+    return Promise.resolve(); // No es necesario devolver nada si ya hay time frames
   })
   .then(() => {
-    console.log("Default horaries created successfully.");
+    console.log("Default times created successfully.");
   })
   .catch((error) => {
-    console.error("Error:", error);
+    console.error("Error creating set times:", error);
   });
 
-module.exports = Horary;
+module.exports = TimeFrame;

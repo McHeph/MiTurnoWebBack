@@ -3,7 +3,6 @@ const { validateAuth } = require("../middlewares/validateAuth.js");
 const { validateToken } = require("../config/tokens.config");
 const { transporter } = require("../config/mailer.config");
 const User = require("../models/User.models");
-const Role = require("../models/Role.models");
 const { Turn, BranchOffice } = require("../models/index.models");
 const { Op } = require("sequelize");
 
@@ -25,7 +24,7 @@ class UsersController {
           email: email,
           dni: dni,
           phone_number,
-          role_id: "customer",
+          role: "customer",
         };
 
         const token = generateToken(payload, "10d");
@@ -38,7 +37,7 @@ class UsersController {
             password,
             token: token,
             phone_number,
-            role_id: "customer",
+            role: "customer",
           },
         }).then((users) => {
           if (!users[1]) return res.status(409).send("Email already exists");
@@ -70,14 +69,14 @@ class UsersController {
         if (!user) return res.sendStatus(401);
         user.validatePassword(password).then((isValid) => {
           if (!isValid) return res.sendStatus(401);
-          if (!user.confirmation) return res.status(412).send("Not confirmed!");
+          if (!user.validation) return res.status(412).send("Not validated!");
           const payload = {
             id: user.id,
             full_name: user.full_name,
             dni: user.dni,
             email: user.email,
             phone_number: user.phone_number,
-            role_id: user.role_id,
+            role: user.role,
             branch_office_id: user.branch_office_id,
           };
 
@@ -121,7 +120,7 @@ class UsersController {
             dni: user.dni,
             email: user.email,
             phone_number: user.phone_number,
-            role_id: user.role_id,
+            role: user.role,
             branch_office_id: user.branch_office_id,
             turns: turns,
           };
@@ -164,7 +163,7 @@ class UsersController {
           ([rows, users]) => {
             const user = users[0];
 
-            if (user.role_id === "operator" && !branch_office_id)
+            if (user.role === "operator" && !branch_office_id)
               return res
                 .status(400)
                 .send({ error: "All fields are required!" });
@@ -175,7 +174,7 @@ class UsersController {
               dni: user.dni,
               email: user.email,
               phone_number: user.phone_number,
-              role_id: user.role_id,
+              role: user.role,
               branch_office_id: user.branch_office_id,
             };
 
@@ -199,15 +198,14 @@ class UsersController {
 
   static editProfileFromAdmin(req, res) {
     const id = req.params.user_id;
-    const { full_name, dni, phone_number, role_id, branch_office_id } =
-      req.body;
+    const { full_name, dni, phone_number, role, branch_office_id } = req.body;
 
-    if (!full_name || !dni || !role_id || !phone_number || !branch_office_id) {
+    if (!full_name || !dni || !role || !phone_number || !branch_office_id) {
       return res.status(400).send({ error: "All fields are required!" });
     }
 
     User.findByPk(id).then((user) => {
-      if (user.role_id === "super admin") {
+      if (user.role === "super admin") {
         return res
           .status(401)
           .send("You cannot revoke permissions from a super administrator");
@@ -237,7 +235,7 @@ class UsersController {
               dni: user.dni,
               email: user.email,
               phone_number: user.phone_number,
-              role_id: user.role_id,
+              role: user.role,
               branch_office_id: user.branch_office_id,
             };
 
@@ -359,7 +357,7 @@ class UsersController {
         if (!user) return res.sendStatus(404);
 
         /* Un Super Administrador no se puede autorevocar su permiso*/
-        if (user.role_id === "super admin")
+        if (user.role === "super admin")
           return res
             .status(400)
             .send(
@@ -369,7 +367,7 @@ class UsersController {
       .then(() => {
         // Si pasa todas las validaciones procede a promover o revocar los permisos según sea el caso
         User.update(
-          { role_id: req.body.role_id },
+          { role: req.body.role },
           { where: { id: user_id }, returning: true }
         ).then(() => {
           res.status(201).send("Successful operation!");
@@ -387,7 +385,7 @@ class UsersController {
   static deleteUser(req, res) {
     User.findByPk(req.params.id)
       .then((user) => {
-        if (user.role_id === "super admin") {
+        if (user.role === "super admin") {
           return res.status(401).send("Unauthorized");
         } else {
           return User.destroy({
@@ -432,7 +430,7 @@ class UsersController {
           email,
           dni,
           phone_number,
-          role_id: "operator",
+          role: "operator",
           branch_office_id,
         };
 
@@ -447,7 +445,7 @@ class UsersController {
             token: token,
             phone_number,
             branch_office_id,
-            role_id: "operator",
+            role: "operator",
           },
         }).then((operators) => {
           if (!operators[1])
@@ -473,7 +471,7 @@ class UsersController {
   }
   static getOperators(req, res) {
     User.findAll({
-      where: { role_id: "operator" },
+      where: { role: "operator" },
       attributes: { exclude: ["password", "salt", "token"] },
       include: [
         {
@@ -498,7 +496,7 @@ class UsersController {
 
     User.update(
       {
-        confirmation: true,
+        validation: true,
         token: null,
       },
       { where: { token }, returning: true }

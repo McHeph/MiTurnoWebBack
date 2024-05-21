@@ -7,9 +7,9 @@ function validateAuthOperator(req, res, next) {
   const { user } = validateToken(token);
   if (
     !user ||
-    (user.role_id !== "operator" &&
-      user.role_id !== "admin" &&
-      user.role_id !== "super admin")
+    (user.role !== "operator" &&
+      user.role !== "admin" &&
+      user.role !== "super admin")
   )
     return res.sendStatus(401);
 

@@ -8,7 +8,7 @@ const router = express.Router();
 router.post("/:user_id", validateAuth, TurnsController.generateTurn);
 router.get("/:id", validateAuth, TurnsController.getTurn);
 router.get(
-  "/by-confirmation-and-user/:confirmation_id/:user_id",
+  "/by-confirmation-and-user/:confirmation/:user_id",
   validateAuth,
   TurnsController.getAllTurnsByConfirmationAndUser
 );
@@ -17,7 +17,7 @@ router.put("/cancel-turn/:id", validateAuth, TurnsController.cancelTurn);
 //Con permisos admin y super admin
 router.get("/", validateAuthAdmin, TurnsController.all);
 router.get(
-  "/by-confirmation/:confirmation_id",
+  "/by-confirmation/:confirmation",
   validateAuthAdmin,
   TurnsController.getAllTurnsByConfirmation
 );
@@ -39,7 +39,7 @@ router.get(
 
 //Con permisos operator, admin y super admin
 router.get(
-  "/by-confirmation-and-branch-office/:confirmation_id/:branch_office_id",
+  "/by-confirmation-and-branch-office/:confirmation/:branch_office_id",
   validateAuthOperator,
   TurnsController.getAllTurnsByConfirmationAndBranchOfficeId
 );

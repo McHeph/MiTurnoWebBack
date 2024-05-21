@@ -27,8 +27,8 @@
       "description": "Operations related to user roles."
     },
     {
-      "name": "horaries",
-      "description": "Operations related to turns horaries."
+      "name": "time-frames",
+      "description": "Operations related to turns time frames."
     }
   ],
   "components": {
@@ -64,11 +64,11 @@
             "type": "string",
             "description": "Token for password recovery."
           },
-          "confirmation": {
+          "validation": {
             "type": "boolean",
-            "description": "Confirmation of user account registration."
+            "description": "validation of user account registration."
           },
-          "role_id": {
+          "role": {
             "type": "string",
             "description": "User role."
           },
@@ -83,7 +83,7 @@
           "password",
           "dni",
           "phone_number",
-          "role_id"
+          "role"
         ],
         "example": {
           "full_name": "Alan Turing",
@@ -108,7 +108,7 @@
             "type": "time",
             "description": "Time in which the turn was reserved."
           },
-          "confirmation_id": {
+          "confirmation": {
             "type": "string",
             "description": "State in which the turn is (confirmed, pending, cancelled)."
           },
@@ -219,7 +219,7 @@
         "properties": {
           "id": {
             "type": "time",
-            "description": "Turns horaries."
+            "description": "Turns time frames."
           }
         },
         "required": ["id"],
@@ -276,7 +276,7 @@
                     "email": "alan@email.com",
                     "dni": "123456789",
                     "phone_number": "2231234567",
-                    "role_id": "customer"
+                    "role": "customer"
                   }
                 }
               }
@@ -331,7 +331,7 @@
                     "email": "alan@email.com",
                     "dni": "123456789",
                     "phone_number": "2231234567",
-                    "role_id": "customer",
+                    "role": "customer",
                     "branch_office_id": "null"
                   }
                 }
@@ -493,7 +493,7 @@
                     "email": "alan@email.com",
                     "dni": "123456789",
                     "phone_number": "2231234567",
-                    "role_id": "customer",
+                    "role": "customer",
                     "branch_office_id": null
                   }
                 }
@@ -537,7 +537,7 @@
                     "email": "alan@email.com",
                     "dni": "123456789",
                     "phone_number": "2231234567",
-                    "role_id": "customer",
+                    "role": "customer",
                     "branch_office_id": null,
                     "turns": [
                       {
@@ -545,7 +545,7 @@
                         "turn_date": "2023-11-29",
                         "reservation_date": "2023-11-28",
                         "reservation_time": "13:21:01",
-                        "confirmation_id": "pending",
+                        "confirmation": "pending",
                         "reason_cancellation": null,
                         "user_id": 1,
                         "branch_office_id": 1,
@@ -623,10 +623,10 @@
                       "id": 1,
                       "email": "alan@email.com",
                       "full_name": "Alan Turing",
-                      "role_id": "customer",
+                      "role": "customer",
                       "branch_office_id": null,
                       "dni": "123456789",
-                      "confirmation": false,
+                      "validation": false,
                       "phone_number": "2231234567",
                       "createdAt": "2023-11-28T19:37:07.128Z",
                       "updatedAt": "2023-11-28T19:37:07.128Z"
@@ -691,7 +691,7 @@
                     "email": "alan@email.com",
                     "dni": "12345678",
                     "phone_number": "00542231234567",
-                    "role_id": "customer",
+                    "role": "customer",
                     "branch_office_id": null
                   }
                 }
@@ -754,7 +754,7 @@
       "put": {
         "tags": ["users"],
         "summary": "Confirm user account registration.",
-        "description": "Search the database for the user using the confirmation token and confirm the account.",
+        "description": "Search the database for the user using the validation token and confirm the account.",
         "parameters": [
           {
             "in": "path",
@@ -806,7 +806,7 @@
                 "$ref": "#/components/schemas/User"
               },
               "example": {
-                "role_id": "operator"
+                "role": "operator"
               }
             }
           }
@@ -895,7 +895,7 @@
                     "id": 1,
                     "turn_date": "2023-12-07",
                     "horary_id": "10:15:00",
-                    "confirmation_id": "pending",
+                    "confirmation": "pending",
                     "reservation_date": "2023-11-29",
                     "reservation_time": "16:17:05",
                     "branch_office_id": 1,
@@ -915,7 +915,7 @@
         }
       }
     },
-    "/api/turns/by-confirmation-and-branch-office/{confirmation_id}/{branch_office_id}": {
+    "/api/turns/by-confirmation-and-branch-office/{confirmation}/{branch_office_id}": {
       "get": {
         "tags": ["turns"],
         "summary": "Get turns.",
@@ -923,7 +923,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "confirmation_id",
+            "name": "confirmation",
             "schema": {
               "type": "string",
               "description": "Confirmation Id to get turns."
@@ -955,7 +955,7 @@
                       "turn_date": "2023-12-07",
                       "reservation_date": "2023-11-29",
                       "reservation_time": "16:17:05",
-                      "confirmation_id": "pending",
+                      "confirmation": "pending",
                       "reason_cancellation": null,
                       "user_id": 1,
                       "branch_office_id": 1,
@@ -1017,7 +1017,7 @@
                     "turn_date": "2023-12-07",
                     "reservation_date": "2023-11-29",
                     "reservation_time": "16:17:05",
-                    "confirmation_id": "pending",
+                    "confirmation": "pending",
                     "reason_cancellation": null,
                     "user_id": 1,
                     "branch_office_id": 1,
@@ -1065,7 +1065,7 @@
                       "turn_date": "2023-12-07",
                       "reservation_date": "2023-11-29",
                       "reservation_time": "16:17:05",
-                      "confirmation_id": "pending",
+                      "confirmation": "pending",
                       "reason_cancellation": null,
                       "user_id": 1,
                       "branch_office_id": 1,
@@ -1112,7 +1112,7 @@
                     "turn_date": "2023-12-07",
                     "reservation_date": "2023-11-29",
                     "reservation_time": "16:17:05",
-                    "confirmation_id": "confirmed",
+                    "confirmation": "confirmed",
                     "reason_cancellation": null,
                     "user_id": 1,
                     "branch_office_id": 1,
@@ -1174,7 +1174,7 @@
                     "turn_date": "2023-12-07",
                     "reservation_date": "2023-11-29",
                     "reservation_time": "16:17:05",
-                    "confirmation_id": "cancelled",
+                    "confirmation": "cancelled",
                     "reason_cancellation": "Ya no quiero ir.",
                     "user_id": 1,
                     "branch_office_id": 1,
@@ -1489,11 +1489,11 @@
         }
       }
     },
-    "/api/horaries/": {
+    "/apitime-frames/": {
       "get": {
-        "tags": ["horaries"],
-        "summary": "Get all horaries.",
-        "description": "Get all horaries.",
+        "tags": ["time-frames"],
+        "summary": "Get all time frames.",
+        "description": "Get all time frames.",
         "responses": {
           "200": {
             "content": {
@@ -1524,18 +1524,18 @@
         }
       }
     },
-    "/api/horaries/{date}/{branch_office_id}": {
+    "/apitime-frames/{date}/{branch_office_id}": {
       "get": {
-        "tags": ["horaries"],
-        "summary": "Get horaries.",
-        "description": "Get horaries by date and branch office Id.",
+        "tags": ["time-frames"],
+        "summary": "Get time frames.",
+        "description": "Get time frames by date and branch office Id.",
         "parameters": [
           {
             "in": "path",
             "name": "dateonly",
             "schema": {
               "type": "string",
-              "description": "Date for which available horaries are required to be obtained."
+              "description": "Date for which available time frames are required to be obtained."
             },
             "required": true
           },
@@ -1544,7 +1544,7 @@
             "name": "branch_office_id",
             "schema": {
               "type": "integer",
-              "description": "Branch office Id for which available horaries are required to be obtained."
+              "description": "Branch office Id for which available time frames are required to be obtained."
             },
             "required": true
           }
