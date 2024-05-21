@@ -2,20 +2,22 @@ const { transporter } = require("../config/mailer.config");
 const Turn = require("../models/Turn.models");
 const User = require("../models/User.models");
 const BranchOffice = require("../models/BranchOffice.models");
-const ReasonCancellation = require("../models/ReasonCancellation.models");
 const moment = require("moment");
-const { Op, where } = require("sequelize");
 
 class TurnsController {
   static generateTurn(req, res) {
     const currentDate = moment();
     const currentTime = moment().format("HH:mm:ss");
-    const { turn_date, horary_id, branch_office_id, full_name, phone_number } =
-      req.body;
-
+    const {
+      appointment_date,
+      appointment_time,
+      branch_office_id,
+      full_name,
+      phone_number,
+    } = req.body;
     if (
-      !turn_date ||
-      !horary_id ||
+      !appointment_date ||
+      !appointment_time ||
       !branch_office_id ||
       !full_name ||
       !phone_number
@@ -34,8 +36,8 @@ class TurnsController {
     const maxDate = moment().add(31, "days");
 
     if (
-      moment(turn_date).isBefore(minDate, "day") ||
-      moment(turn_date).isAfter(maxDate, "day")
+      moment(appointment_date).isBefore(minDate, "day") ||
+      moment(appointment_date).isAfter(maxDate, "day")
     ) {
       return res.status(400).send({
         error:
@@ -44,7 +46,7 @@ class TurnsController {
     }
 
     // Verifica si la fecha proporcionada no es sábado ni domingo (bloquear esos días también desde el front con el calendar)
-    const dayOfWeek = moment(turn_date).day();
+    const dayOfWeek = moment(appointment_date).day();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       return res
         .status(400)
@@ -52,7 +54,7 @@ class TurnsController {
     }
 
     // Verifica si la fecha proporcionada es anterior a la fecha actual (bloquear también los días anteriores a la fecha actual desde el front con el calendar)
-    if (moment(turn_date).isBefore(currentDate, "day")) {
+    if (moment(appointment_date).isBefore(currentDate, "day")) {
       return res
         .status(400)
         .send({ error: "The selected date is before the current date" });
@@ -61,8 +63,8 @@ class TurnsController {
     Turn.findAll({
       where: {
         user_id: req.params.user_id,
-        turn_date,
-        confirmation_id: "pending",
+        appointment_date,
+        confirmation: "pending",
       },
     })
       .then((turns) => {
@@ -93,55 +95,57 @@ class TurnsController {
 
               if (
                 !(
-                  horary_id >= branch_office.opening_time &&
-                  horary_id <= adjustedClosingTime
+                  appointment_time >= branch_office.opening_time &&
+                  appointment_time <= adjustedClosingTime
                 )
               ) {
                 return res
                   .status(400)
                   .send("The turn date is outside branch office hours.");
               }
-              Turn.checkTurns(turn_date, horary_id, branch_office.id).then(
-                (turns) => {
-                  if (turns.length >= branch_office.boxes)
-                    return res
-                      .status(400)
-                      .send(
-                        "The turn on the selected day and time is no longer available."
-                      );
-                  Turn.create({
-                    turn_date,
-                    full_name,
-                    phone_number,
-                    horary_id,
-                    confirmation_id: "pending",
-                    reservation_date: currentDate,
-                    reservation_time: currentTime,
-                    branch_office_id,
-                    user_id: user.id,
-                  }).then((turn) => {
-                    const info = transporter.sendMail({
-                      from: '"Confirmación de turno" <turnoweb.mailing@gmail.com>',
-                      to: user.email,
-                      subject: "Confirmación de turno ✔",
-                      html: `<p>Hola ${
-                        user.full_name
-                      }! Nos comunicamos de "Mi Turno Web" para confirmar que tu turno del ${
-                        turn.turn_date
-                      } a las ${turn.horary_id.slice(
-                        0,
-                        5
-                      )} fue reservado satisfactoriamente. Te esperamos en nuestra sucursal de ${
-                        branch_office.name
-                      }.
+              Turn.checkTurns(
+                appointment_date,
+                appointment_time,
+                branch_office.id
+              ).then((turns) => {
+                if (turns.length >= branch_office.boxes)
+                  return res
+                    .status(400)
+                    .send(
+                      "The turn on the selected day and time is no longer available."
+                    );
+                Turn.create({
+                  appointment_date,
+                  full_name,
+                  phone_number,
+                  appointment_time,
+                  confirmation: "pending",
+                  reservation_date: currentDate,
+                  reservation_time: currentTime,
+                  branch_office_id,
+                  user_id: user.id,
+                }).then((turn) => {
+                  const info = transporter.sendMail({
+                    from: '"Confirmación de turno" <turnoweb.mailing@gmail.com>',
+                    to: user.email,
+                    subject: "Confirmación de turno ✔",
+                    html: `<p>Hola ${
+                      user.full_name
+                    }! Nos comunicamos de "Mi Turno Web" para confirmar que tu turno del ${
+                      turn.appointment_date
+                    } a las ${turn.appointment_time.slice(
+                      0,
+                      5
+                    )} fue reservado satisfactoriamente. Te esperamos en nuestra sucursal de ${
+                      branch_office.name
+                    }.
                 Muchas gracias por confiar en nosotros!</p>`,
-                    });
-                    info.then(() => {
-                      res.status(201).send(turn);
-                    });
                   });
-                }
-              );
+                  info.then(() => {
+                    res.status(201).send(turn);
+                  });
+                });
+              });
             }
           );
         });
@@ -155,7 +159,7 @@ class TurnsController {
   static getAllTurnsByConfirmation(req, res) {
     Turn.findAll({
       where: {
-        confirmation_id: req.params.confirmation_id,
+        confirmation: req.params.confirmation,
       },
       include: [
         { model: BranchOffice, as: "branch_office" },
@@ -166,7 +170,7 @@ class TurnsController {
         if (!turns)
           return res
             .status(404)
-            .send("There are no turns in state: ", req.params.confirmation_id);
+            .send("There are no turns in state: ", req.params.confirmation);
         return res.status(200).send(turns);
       })
       .catch((error) => {
@@ -178,7 +182,7 @@ class TurnsController {
   static getAllTurnsByConfirmationAndBranchOfficeId(req, res) {
     Turn.findAll({
       where: {
-        confirmation_id: req.params.confirmation_id,
+        confirmation: req.params.confirmation,
         branch_office_id: req.params.branch_office_id,
       },
       include: [
@@ -190,7 +194,7 @@ class TurnsController {
         if (!turns)
           return res
             .status(404)
-            .send("There are no turns in state: ", req.params.confirmation_id);
+            .send("There are no turns in state: ", req.params.confirmation);
         return res.status(200).send(turns);
       })
       .catch((error) => {
@@ -202,7 +206,7 @@ class TurnsController {
   static getAllTurnsByConfirmationAndUser(req, res) {
     Turn.findAll({
       where: {
-        confirmation_id: req.params.confirmation_id,
+        confirmation: req.params.confirmation,
         user_id: req.params.user_id,
       },
       include: [{ model: BranchOffice, as: "branch_office" }],
@@ -236,8 +240,8 @@ class TurnsController {
 
   static confirmTurn(req, res) {
     const { id } = req.params;
-    const { confirmation_id } = req.body;
-    Turn.update({ confirmation_id }, { where: { id }, returning: true })
+    const { confirmation } = req.body;
+    Turn.update({ confirmation }, { where: { id }, returning: true })
       .then(([rows, turns]) => {
         res.status(200).send(turns[0]);
       })
@@ -249,42 +253,36 @@ class TurnsController {
 
   static cancelTurn(req, res) {
     const { id } = req.params;
-    const { reason_cancellation_id } = req.body;
+    const { cancellation_reason } = req.body;
 
-    if (!reason_cancellation_id)
+    if (!cancellation_reason)
       return res.status(400).send({
         error: "The reason for cancellation of the turn is required.",
       });
 
     Turn.update(
-      { confirmation_id: "cancelled", reason_cancellation_id },
+      { confirmation: "cancelled", cancellation_reason },
       { where: { id }, returning: true }
     )
       .then(([rows, turns]) => {
         User.findByPk(turns[0].user_id).then((user) => {
-          ReasonCancellation.findByPk(reason_cancellation_id).then(
-            (reasonCancellation) => {
-              const info = transporter.sendMail({
-                from: '"Cancelación de turno" <turnoweb.mailing@gmail.com>',
-                to: user.email,
-                subject: "Cancelación de turno",
-                html: `<p>Hola ${
-                  user.full_name
-                }! Nos comunicamos de "Mi Turno Web" para confirmar que tu turno del ${
-                  turns[0].turn_date
-                } a las ${turns[0].horary_id.slice(
-                  0,
-                  5
-                )} fue cancelado por la siguiente razón:"${
-                  reasonCancellation.reason
-                }".
+          const info = transporter.sendMail({
+            from: '"Cancelación de turno" <turnoweb.mailing@gmail.com>',
+            to: user.email,
+            subject: "Cancelación de turno",
+            html: `<p>Hola ${
+              user.full_name
+            }! Nos comunicamos de "Mi Turno Web" para confirmar que tu turno del ${
+              turns[0].appointment_date
+            } a las ${turns[0].appointment_time.slice(
+              0,
+              5
+            )} fue cancelado por la siguiente razón:"${cancellation_reason}".
               Muchas gracias por confiar en nosotros!</p>`,
-              });
-              info.then(() => {
-                res.status(200).send(turns[0]);
-              });
-            }
-          );
+          });
+          info.then(() => {
+            res.status(200).send(turns[0]);
+          });
         });
       })
       .catch((error) => {
@@ -309,19 +307,19 @@ class TurnsController {
       .then((count) => {
         info.total = count;
         Turn.count({
-          where: { branch_office_id, confirmation_id: "cancelled" },
+          where: { branch_office_id, confirmation: "cancelled" },
         }).then((countCancel) => {
           info.total_cancelled = countCancel;
           Turn.count({
-            where: { branch_office_id, confirmation_id: "confirmed" },
+            where: { branch_office_id, confirmation: "confirmed" },
           }).then((countConfirm) => {
             info.total_confirmed = countConfirm;
             Turn.count({
-              where: { branch_office_id, confirmation_id: "absence" },
+              where: { branch_office_id, confirmation: "absence" },
             }).then((countAbsence) => {
               info.total_absence = countAbsence;
               Turn.count({
-                where: { branch_office_id, confirmation_id: "pending" },
+                where: { branch_office_id, confirmation: "pending" },
               }).then((countPending) => {
                 info.total_pending = countPending;
                 res.status(200).send(info);
@@ -340,7 +338,7 @@ class TurnsController {
     Turn.findAll({ where: { branch_office_id } })
       .then((turns) => {
         turns.map((turn) => {
-          let advanceDate = moment(turn.turn_date);
+          let advanceDate = moment(turn.appointment_date);
           advanceDate = advanceDate.subtract(1, "w");
           if (moment(turn.reservation_date).isBefore(advanceDate)) {
             info.advance_count++;
@@ -442,9 +440,9 @@ class TurnsController {
     let currentDate = moment();
     Turn.findAll({ where: { branch_office_id } }).then((turns) => {
       turns.map((turn) => {
-        if (moment(turn.turn_date).year() === currentDate.year()) {
-          info[moment(turn.turn_date).month()][turn.confirmation_id]++;
-          info[moment(turn.turn_date).month()].total++;
+        if (moment(turn.appointment_date).year() === currentDate.year()) {
+          info[moment(turn.appointment_date).month()][turn.confirmation]++;
+          info[moment(turn.appointment_date).month()].total++;
         }
       });
       res.status(200).send(info);

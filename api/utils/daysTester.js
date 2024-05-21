@@ -64,9 +64,9 @@ class daysTester {
     for (const day of daysArray) {
       await Turn.findAll({
         where: {
-          turn_date: day,
+          appointment_date: day,
           branch_office_id: branch.id,
-          confirmation_id: "pending",
+          confirmation: "pending",
         },
       }).then((turns) => {
         if (turns.length >= maxTurns) {

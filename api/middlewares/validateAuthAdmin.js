@@ -5,7 +5,7 @@ function validateAuthAdmin(req, res, next) {
   if (!token) return res.sendStatus(401);
 
   const { user } = validateToken(token);
-  if (!user || (user.role_id !== "admin" && user.role_id !== "super admin"))
+  if (!user || (user.role !== "admin" && user.role !== "super admin"))
     return res.sendStatus(401);
 
   req.user = user;

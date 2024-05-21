@@ -1,7 +1,6 @@
 const Sequelize = require("sequelize");
 const bcrypt = require("bcrypt");
 const db = require("./db");
-const Role = require("./Role.models");
 const BranchOffice = require("./BranchOffice.models");
 
 class User extends Sequelize.Model {
@@ -37,16 +36,13 @@ User.init(
       type: Sequelize.STRING,
       allowNull: false,
     },
-    role_id: {
-      type: Sequelize.STRING,
+    role: {
+      type: Sequelize.ENUM("admin", "super admin", "operator", "customer"),
       allowNull: false,
-      references: {
-        model: Role,
-        key: "id",
-      },
     },
     branch_office_id: {
       type: Sequelize.INTEGER,
+      allowNull: true,
       references: {
         model: BranchOffice,
         key: "id",
@@ -61,7 +57,7 @@ User.init(
       type: Sequelize.TEXT,
       allowNull: true,
     },
-    confirmation: {
+    validation: {
       type: Sequelize.BOOLEAN,
       defaultValue: false,
     },
@@ -95,32 +91,12 @@ User.sync()
           full_name: "Super admin",
           email: process.env.EMAIL_SUPERADMIN,
           password: "Turnoweb123456",
-          role_id: "super admin",
+          role: "super admin",
           dni: "12345678",
-          confirmation: true,
+          validation: true,
           phone_number: "2231234567",
         },
-        {
-          full_name: "Juan Arismendi",
-          email: "juan_arismendi025@outlook.es",
-          password: "Chicho01",
-          role_id: "customer",
-          dni: "43771262",
-          confirmation: true,
-          phone_number: "3814888082",
-        },
-        {
-          full_name: "Lucas Riquelme",
-          email: "lucasriquelme@hotmail.com.ar",
-          password: "Chicho01",
-          role_id: "customer",
-          dni: "461357951",
-          confirmation: true,
-          phone_number: "945462161",
-        },
       ];
-
-      // Aplicar hashing de la contraseña manualmente
       const usersWithHashedPassword = [];
       userSuperAdminToCreate.map((user) => {
         const salt = bcrypt.genSaltSync();
@@ -141,7 +117,7 @@ User.sync()
     console.log("Default user super admin created successfully.");
   })
   .catch((error) => {
-    console.error("Error:", error);
+    console.error("Error creating super admin:", error);
   });
 
 module.exports = User;
