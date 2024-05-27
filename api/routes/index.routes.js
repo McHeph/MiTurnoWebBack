@@ -9,5 +9,8 @@ router.use("/users", users);
 router.use("/turns", turns);
 router.use("/branch-offices", branchOffices);
 router.use("/time-frames", timeFrames);
+router.get("/ping", (req, res) => {
+  res.send("pong!");
+});
 
 module.exports = router;
