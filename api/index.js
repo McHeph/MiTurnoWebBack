@@ -37,7 +37,7 @@ app.use("/api", routes);
 // Ruta para la documentación de Swagger
 app.use("/api-doc", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 
-db.sync({ force: true }).then(() => {
+db.sync({ force: false }).then(() => {
   app.listen(3000, () => console.log(`Servidor  en el puerto 5001`));
 });
 module.exports = app;
