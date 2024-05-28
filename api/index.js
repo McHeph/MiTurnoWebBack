@@ -38,6 +38,6 @@ app.use("/api", routes);
 app.use("/api-doc", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 
 db.sync({ force: true }).then(() => {
-  app.listen(5001, () => console.log(`Servidor  en el puerto 5001`));
+  app.listen(3000, () => console.log(`Servidor  en el puerto 5001`));
 });
 module.exports = app;
