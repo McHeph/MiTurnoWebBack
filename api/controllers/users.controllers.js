@@ -43,7 +43,7 @@ class UsersController {
           if (!users[1]) return res.status(409).send("Email already exists");
 
           //Genera el link de confirmación de cuenta y lo envía por correo
-          const confirmURL = `http://localhost:3000/confirm-email/${token}`;
+          const confirmURL = `https://miturnoweb.vercel.app/confirm-email/${token}`;
           const info = transporter.sendMail({
             from: '"Confirmación de correo electrónico" <turnoweb.mailing@gmail.com>',
             to: users[0].email,
@@ -270,7 +270,7 @@ class UsersController {
 
         user.save().then(() => {
           //Genera el link de recuperación de contraseña y lo envía por correo
-          const restorePasswordURL = `http://localhost:3000/new-password/${user.token}`;
+          const restorePasswordURL = `https://miturnoweb.vercel.app/new-password/${user.token}`;
           const info = transporter.sendMail({
             from: '"Recuperación de contraseña" <turnoweb.mailing@gmail.com>',
             to: user.email,
@@ -452,7 +452,7 @@ class UsersController {
             return res.status(409).send("Email already exists");
 
           //Genera el link de recuperación de contraseña y lo envía por correo
-          const confirmURL = `http://localhost:3000/confirm-email/${token}`;
+          const confirmURL = `https://miturnoweb.vercel.app/confirm-email/${token}`;
           const info = transporter.sendMail({
             from: '"Confirmación de correo electrónico" <turnoweb.mailing@gmail.com>',
             to: operators[0].email,
