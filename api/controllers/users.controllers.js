@@ -134,7 +134,11 @@ class UsersController {
   }
 
   static logout(req, res) {
-    res.clearCookie("token");
+    res.cookie("token", "", {
+      sameSite: "none",
+      httpOnly: true,
+      secure: true,
+    });
     res.status(204).send("Logged out");
   }
 
