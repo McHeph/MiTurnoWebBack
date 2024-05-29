@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "https://miturnoweb.vercel.app/",
+    origin: "https://miturnoweb.vercel.app",
     credentials: true,
   })
 );
